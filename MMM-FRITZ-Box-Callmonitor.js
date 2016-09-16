@@ -39,6 +39,26 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 		return ["moment.js"];
 	},
 
+	start: function() {
+		//Create callHistory array
+		this.callHistory = [];
+		this.activeAlert = null;
+		//Set helper variable this so it is available in the timer
+		var self = this;
+		//Update doom every minute so that the time of the call updates and calls get removed after a certain time
+		setInterval(function() {
+			self.updateDom();
+		}, 60000);
+
+		this.contactsLoaded = false;
+		this.numberOfContacts = 0;
+		this.contactLoadError = false;
+
+		//Send config to the node helper
+		this.sendSocketNotification("CONFIG", this.config);
+		Log.info("Starting module: " + this.name);
+	},
+
 	// Override socket notification handler.
 	socketNotificationReceived: function(notification, payload) {
 		if (notification === "call") {
@@ -90,32 +110,15 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 			}
 		}
 		if (notification === "contacts_loaded") {
+			this.contactsLoaded = true;
 			if (payload === -1) {
-				this.contactsLoaded = -1;
+				this.contactLoadError = true;
 				this.updateDom();
 				return;
 			}
-			this.contactsLoaded += payload;
+			this.numberOfContacts += payload;
 			this.updateDom();
 		}
-	},
-
-	start: function() {
-		//Create callHistory array
-		this.callHistory = [];
-		this.activeAlert = null;
-		//Set helper variable this so it is available in the timer
-		var self = this;
-		//Update doom every minute so that the time of the call updates and calls get removed after a certain time
-		setInterval(function() {
-			self.updateDom();
-		}, 60000);
-
-		this.contactsLoaded = 0;
-
-		//Send config to the node helper
-		this.sendSocketNotification("CONFIG", this.config);
-		Log.info("Starting module: " + this.name);
 	},
 
 	getDom: function() {
@@ -141,21 +144,21 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 			content = this.translate("noCall");
 			if (this.config.showContactsStatus && (this.config.vCard || this.config.password !== ""))
 			{
-				if (this.contactsLoaded > 0)
+				content += " (<span class='small fa fa-book'/></span>";
+
+				if (this.contactsLoaded)
 				{
-					content += " (<span class='small fa fa-book'/></span> " + this.contactsLoaded + ")";
+					content += " " + this.numberOfContacts;
 				}
 				else
 				{
-					if (this.contactsLoaded === -1)
-					{
-						content += " (<span class='small fa fa-book'/></span> <span class='small fa fa-exclamation-triangle'/></span>)";
-					}
-					else
-					{
-						content += " (<span class='small fa fa-book'/></span> <span class='small fa fa-refresh fa-spin fa-fw'></span>)";
-					}
+					content += " <span class='small fa fa-refresh fa-spin fa-fw'></span>";
 				}
+				if (this.contactLoadError)
+				{
+					content += " <span class='small fa fa-exclamation-triangle'/></span>";
+				}
+				content += ")";
 			}
 			wrapper.innerHTML = content;
 			wrapper.className = "xsmall dimmed";
