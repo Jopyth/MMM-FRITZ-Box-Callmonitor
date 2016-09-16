@@ -102,10 +102,20 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 			}
 		}
 		if (notification === "call_history") {
-			//Add call to callHistory (timestamp and caller) or if minimumCallLength is set only missed calls
-			this.callHistory = this.callHistory.concat(payload);
+			//Process new callHistory
+			for (var i = 0; i < payload.length; i++) {
+				//Check if call is older than maximumCallDistance
+				if (moment(moment()).diff(moment(payload[i].time)) > this.config.maximumCallDistance * 60000) {
+					//is older -> remove from list
+					payload.splice(i, 1);
+					i--;
+				}
+			}
+
 			if (payload.length > 0)
 			{
+				//Add call to callHistory (timestamp and caller) or if minimumCallLength is set only missed calls
+				this.callHistory = this.callHistory.concat(payload);
 				this.updateDom(2000);
 			}
 		}
@@ -119,6 +129,29 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 			this.numberOfContacts += payload;
 			this.updateDom();
 		}
+	},
+
+	getHeaderAppendix: function() {
+		var appendix = " ("
+		if (this.config.showContactsStatus && (this.config.vCard || this.config.password !== ""))
+		{
+			appendix += "<span class='small fa fa-book'/></span>";
+
+			if (this.contactsLoaded)
+			{
+				appendix += " " + this.numberOfContacts;
+			}
+			else
+			{
+				appendix += " <span class='small fa fa-refresh fa-spin fa-fw'></span>";
+			}
+			if (this.contactLoadError)
+			{
+				appendix += " <span class='small fa fa-exclamation-triangle'/></span>";
+			}
+			appendix += ")";
+		}
+		return appendix
 	},
 
 	getDom: function() {
@@ -141,26 +174,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 
 		//If there are no calls, set "noCall" text.
 		if (calls.length === 0) {
-			content = this.translate("noCall");
-			if (this.config.showContactsStatus && (this.config.vCard || this.config.password !== ""))
-			{
-				content += " (<span class='small fa fa-book'/></span>";
-
-				if (this.contactsLoaded)
-				{
-					content += " " + this.numberOfContacts;
-				}
-				else
-				{
-					content += " <span class='small fa fa-refresh fa-spin fa-fw'></span>";
-				}
-				if (this.contactLoadError)
-				{
-					content += " <span class='small fa fa-exclamation-triangle'/></span>";
-				}
-				content += ")";
-			}
-			wrapper.innerHTML = content;
+			wrapper.innerHTML = this.translate("noCall");
 			wrapper.className = "xsmall dimmed";
 			return wrapper;
 		}
