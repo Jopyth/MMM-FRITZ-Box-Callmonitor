@@ -23,7 +23,8 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 		username: "",
 		password: "",
 		loadSpecificPhonebook: "",
-		tr064Port: 49000
+		tr064Port: 49000,
+		showContactsStatus: false
 	},
 
 	// Define required translations.
@@ -71,7 +72,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 				this.callHistory.push({"time": moment(), "caller": payload.caller});
 			}
 			//Update call list on UI
-			this.updateDom(3000);
+			this.updateDom(2000);
 
 			//Remove alert only on disconnect if it is the current alert shown
 			if (this.activeAlert === payload.caller) {
@@ -83,7 +84,19 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 		if (notification === "call_history") {
 			//Add call to callHistory (timestamp and caller) or if minimumCallLength is set only missed calls
 			this.callHistory = this.callHistory.concat(payload);
-			this.updateDom(3000);
+			if (payload.length > 0)
+			{
+				this.updateDom(2000);
+			}
+		}
+		if (notification === "contacts_loaded") {
+			if (payload === -1) {
+				this.contactsLoaded = -1;
+				this.updateDom();
+				return;
+			}
+			this.contactsLoaded += payload;
+			this.updateDom();
 		}
 	},
 
@@ -97,6 +110,8 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 		setInterval(function() {
 			self.updateDom();
 		}, 60000);
+
+		this.contactsLoaded = 0;
 
 		//Send config to the node helper
 		this.sendSocketNotification("CONFIG", this.config);
@@ -123,7 +138,26 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 
 		//If there are no calls, set "noCall" text.
 		if (calls.length === 0) {
-			wrapper.innerHTML = this.translate("noCall");
+			content = this.translate("noCall");
+			if (this.config.showContactsStatus && (this.config.vCard || this.config.password !== ""))
+			{
+				if (this.contactsLoaded > 0)
+				{
+					content += " (<span class='small fa fa-book'/></span> " + this.contactsLoaded + ")";
+				}
+				else
+				{
+					if (this.contactsLoaded === -1)
+					{
+						content += " (<span class='small fa fa-book'/></span> <span class='small fa fa-exclamation-triangle'/></span>)";
+					}
+					else
+					{
+						content += " (<span class='small fa fa-book'/></span> <span class='small fa fa-refresh fa-spin fa-fw'></span>)";
+					}
+				}
+			}
+			wrapper.innerHTML = content;
 			wrapper.className = "xsmall dimmed";
 			return wrapper;
 		}

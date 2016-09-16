@@ -9,7 +9,8 @@ const xml2js = require("xml2js");
 const https = require("https");
 const url = require('url');
 const moment = require('moment');
-
+const fs = require('fs');
+const exec = require('child_process').exec;
 
 const CALL_TYPE = Object.freeze({
 	INCOMING : 1,
@@ -58,7 +59,7 @@ module.exports = NodeHelper.create({
 				this.setupMonitor();
 				if (this.config.password !== "")
 				{
-					this.setupApiAccess();
+					this.loadDataFromAPI();
 				}
 			};
 		}
@@ -93,59 +94,40 @@ module.exports = NodeHelper.create({
 	},
 
 	parseVcardFile: function() {
+		var self = this;
+
 		if (!this.config.vCard) {
 			return;
 		}
 		vcard.parseVcardFile(this.config.vCard, function(err, data) {
 			//In case there is an error reading the vcard file
-			if (err) console.log("[" + this.name + "] " + err);
-			//success
-			else {
-				//For each contact in vcf file
-				for (var i = 0; i < data.length; i++) {
-					//For each phone number in contact
-					for (var a = 0; a < data[i].phone.length; a++) {
-						//normalize and add to AddressBook
-						self.AddressBook[self.normalizePhoneNumber(data[i].phone[a].value)] = data[i].fullname;
-					}
+			console.log(self.config.vCard);
+			if (err) 
+			{
+				self.sendSocketNotification("contacts_loaded", -1);
+				console.log("[" + self.name + "] " + err);
+				return
+			}
+
+			console.log(self.config.vCard);
+			//For each contact in vcf file
+			for (var i = 0; i < data.length; i++) {
+				//For each phone number in contact
+				for (var a = 0; a < data[i].phone.length; a++) {
+					//normalize and add to AddressBook
+					self.AddressBook[self.normalizePhoneNumber(data[i].phone[a].value)] = data[i].fullname;
 				}
 			}
+			self.sendSocketNotification("contacts_loaded", data.length);
 		});
 	},
 
-	insecureBoxRequest(self, targetUrl, callback) {
-		// WARNING: use this method ONLY for requests to your fritz.box
-		// it ignores self-signed certificates
-		// the fritz.box uses this kind of generated certificate
-		var parsedUrl = url.parse(targetUrl);
-		var options = { 
-			protocol: parsedUrl.protocol,
-			host: parsedUrl.hostname,
-			port: parsedUrl.port,
-			path: parsedUrl.path,
-			rejectUnauthorized: false,
-			requestCert: true,
-			agent: false
-		};
-		return https.get(options, function(response) {
-			if (response.statusCode !== 200)
-			{
-				console.error("Error code " + response.statusCode + " on request: " + targetUrl);
-			}
-			// Continuously update stream with data
-			var body = '';
-			response.on('data', function(d) {
-				body += d;
-			});
-			response.on('end', function() {
-				callback(self, body);
-			});
-		});
-	},
-
-	loadCallList: function(self, body) {
+	loadCallList: function(body) {
+		var self = this;
+		
 		xml2js.parseString(body, function (err, result) {
 			if (err) {
+				self.sendSocketNotification("contacts_loaded", -1);
 				console.error(self.name + " error while parsing call list: " + err);
 				return;
 			}
@@ -168,9 +150,12 @@ module.exports = NodeHelper.create({
 		});
 	},
 
-	loadPhonebook: function(self, body) {
+	loadPhonebook: function(body) {
+		var self = this;
+
 		xml2js.parseString(body, function (err, result) {
 			if (err) {
+				self.sendSocketNotification("contacts_loaded", -1);
 				console.error(self.name + " error while parsing phonebook: " + err);
 				return;
 			}
@@ -189,61 +174,58 @@ module.exports = NodeHelper.create({
 					self.AddressBook[currentNumber] = contactName;
 				}
 			}
+			self.sendSocketNotification("contacts_loaded", contactsArray.length);
 		});
 	},
 
-	setupApiAccess: function() {
+	loadDataFromAPI: function() {
+		const PARENT_DIR = 'modules/MMM-FRITZ-Box-Callmonitor/';
+
 		var self = this;
-
-		var tr064Api = new tr.TR064();
-		tr064Api.initTR064Device(self.config.fritzIP, self.config.tr064Port, function (err, device) {
-			if (err) {
-				console.error(self.name + " error: " + err);
-				return;
+		
+		var options = ['fritz_access.py', '-d', 'data']
+		if (self.config.password !== "")
+		{
+			options.push('-p');
+			options.push(self.config.password);
+		}
+		if (self.config.username !== "")
+		{
+			options.push('-u');
+			options.push(self.config.username);
+		}
+		exec("python " + options.join(" "), {cwd: PARENT_DIR}, function (error, stdout, stderr) {
+			if (error) {
+				self.sendSocketNotification("contacts_loaded", -1);
+				console.log(stderr);
+				throw error;
 			}
-			device.startEncryptedCommunication(function (err, sslDev) {
-				if (err) {
-					console.error(self.name + " error: " + err);
-					return;
-				}
-				if (self.config.username)
+			var phonebooks = stdout.split("\n");
+			for (var i = 0; i < phonebooks.length; i++)
+			{
+				if (phonebooks[i] === "")
 				{
-					sslDev.login(self.config.username, self.config.password);
+					continue;
 				}
-				else
+				var filename = process.cwd() + "/" + PARENT_DIR + phonebooks[i];
+				fs.readFile(filename, function(err, data) {
+					if (err) 
+					{
+						self.sendSocketNotification("contacts_loaded", -1);
+					}
+					self.loadPhonebook(data);
+				});				
+			}
+			filename = process.cwd() + "/" + PARENT_DIR + "data/calls.xml";
+			fs.readFile(filename, function(err, data) {
+				if (err) 
 				{
-					sslDev.login(self.config.password);
+					self.sendSocketNotification("contacts_loaded", -1);
 				}
-				var phoneservice = sslDev.services["urn:dslforum-org:service:X_AVM-DE_OnTel:1"];
-				phoneservice.actions.GetCallList(function (err, result) {
-					if (err) {
-						console.error(self.name + " error: " + err);
-						return;
-					}
-					self.insecureBoxRequest(self, result["NewCallListURL"], self.loadCallList);
-				});
-				phoneservice.actions.GetPhonebookList(function (err, result) {
-					if (err) {
-						console.error(self.name + " error: " + err);
-						return;
-					}
-					var phonebooks = result["NewPhonebookList"];
-
-					for (var phonebookID in phonebooks.split(",")) {
-						var filter = self.config.loadSpecificPhonebook;
-						if (filter == "" || filter == phonebookID)
-						{
-							phoneservice.actions.GetPhonebook({'NewPhonebookID' : phonebookID}, function (err, result) {
-								if (err) {
-									console.error(self.name + " error: " + err);
-									return;
-								}
-								self.insecureBoxRequest(self, result["NewPhonebookURL"], self.loadPhonebook);
-							});
-						}
-					}
-				});
+				self.loadCallList(data);
 			});
 		});
+
+		// parse content
 	}
 });
