@@ -39,6 +39,10 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 		return ["moment.js"];
 	},
 
+	getStyles: function() {
+		return ["font-awesome.css"];
+	},
+
 	start: function() {
 		//Create callHistory array
 		this.callHistory = [];
@@ -145,6 +149,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 			{
 				appendix += " <span class='small fa fa-refresh fa-spin fa-fw'></span>";
 			}
+
 			if (this.contactLoadError)
 			{
 				appendix += " <span class='small fa fa-exclamation-triangle'/></span>";
