@@ -96,9 +96,8 @@ module.exports = NodeHelper.create({
 		if (!this.config.vCard) {
 			return;
 		}
-		vcard.parseVcardFile(this.config.vCard, function(err, data) {
+		vcard.parseVcardFile(self.config.vCard, function(err, data) {
 			//In case there is an error reading the vcard file
-			console.log(self.config.vCard);
 			if (err) 
 			{
 				self.sendSocketNotification("contacts_loaded", -1);
@@ -106,7 +105,6 @@ module.exports = NodeHelper.create({
 				return
 			}
 
-			console.log(self.config.vCard);
 			//For each contact in vcf file
 			for (var i = 0; i < data.length; i++) {
 				//For each phone number in contact
