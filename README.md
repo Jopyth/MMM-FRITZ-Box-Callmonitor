@@ -85,6 +85,15 @@ The following properties can be configured:
 			</td>
 		</tr>
 		<tr>
+			<td><code>showContactsStatus</code></td>
+			<td>If no recent calls are displayed, a small symbol shows how many contacts are loaded in your phonebook. <br>
+			A small warning sign appears if any error occurs when importing contacts from vCard or the FRITZ!Box.
+			<br>
+				<br><b>Possible values:</b> <code>true</code> or <code>false</code>
+				<br><b>Default value:</b> <code>false</code>
+			</td>
+		</tr>
+		<tr>
 			<td><code>minimumCallLength</code></td>
 			<td>There is no real way to tell whether a call was missed or not because voice mails count as connected calls. You can however change the time a call has to be for it to be considered not missed. You should probably use a value as long as your voice mail. <br>Default <code>0</code> means any call gets added to the history.<br>
 				<br><b>Possible values:</b> <code>time</code> in <code>seconds</code>

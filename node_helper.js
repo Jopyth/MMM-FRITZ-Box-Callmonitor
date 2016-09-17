@@ -194,7 +194,7 @@ module.exports = NodeHelper.create({
 		exec("python " + options.join(" "), {cwd: PARENT_DIR}, function (error, stdout, stderr) {
 			if (error) {
 				self.sendSocketNotification("contacts_loaded", -1);
-				console.log(stderr);
+				console.error(self.name + " error while accessing FRITZ!Box: " + stderr);
 				throw error;
 			}
 			var phonebooks = stdout.split("\n");
@@ -208,6 +208,7 @@ module.exports = NodeHelper.create({
 				fs.readFile(filename, function(err, data) {
 					if (err) 
 					{
+						console.error(self.name + " error while reading phonebook: " + err);
 						self.sendSocketNotification("contacts_loaded", -1);
 					}
 					self.loadPhonebook(data);
@@ -217,12 +218,11 @@ module.exports = NodeHelper.create({
 			fs.readFile(filename, function(err, data) {
 				if (err) 
 				{
+					console.error(self.name + " error while reading call list: " + err);
 					self.sendSocketNotification("contacts_loaded", -1);
 				}
 				self.loadCallList(data);
 			});
 		});
-
-		// parse content
 	}
 });

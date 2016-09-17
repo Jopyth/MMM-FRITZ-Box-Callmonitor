@@ -22,8 +22,6 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 		fadePoint: 0.25,
 		username: "",
 		password: "",
-		loadSpecificPhonebook: "",
-		tr064Port: 49000,
 		showContactsStatus: false
 	},
 
@@ -93,7 +91,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 
 			//Add call to callHistory (timestamp and caller) or if minimumCallLength is set only missed calls
 			if (payload.duration <= this.config.minimumCallLength) {
-				this.callHistory.push({"time": moment(), "caller": payload.caller});
+				this.callHistory.unshift({"time": moment(), "caller": payload.caller});
 			}
 			//Update call list on UI
 			this.updateDom(2000);
