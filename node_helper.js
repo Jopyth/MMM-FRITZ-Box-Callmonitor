@@ -168,7 +168,7 @@ module.exports = NodeHelper.create({
 				for (var index in contactNumbers)
 				{
 					var currentNumber = self.normalizePhoneNumber(contactNumbers[index]._);
-					self.AddressBook[currentNumber] = contactName;
+					self.AddressBook[currentNumber] = contactName[0];
 				}
 			}
 			self.sendSocketNotification("contacts_loaded", contactsArray.length);
