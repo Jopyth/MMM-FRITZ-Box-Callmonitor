@@ -94,7 +94,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 				this.callHistory.unshift({"time": moment(), "caller": payload.caller});
 			}
 			//Update call list on UI
-			this.updateDom(2000);
+			this.updateDom(3000);
 
 			//Remove alert only on disconnect if it is the current alert shown
 			if (this.activeAlert === payload.caller) {
@@ -108,7 +108,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 			this.callHistory = this.callHistory.concat(payload);
 			if (payload.length > 0)
 			{
-				this.updateDom(2000);
+				this.updateDom(3000);
 			}
 		}
 		if (notification === "contacts_loaded") {
