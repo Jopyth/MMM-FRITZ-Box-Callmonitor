@@ -128,6 +128,7 @@ Module.register("MMM-FRITZ-Box-Callmonitor", {
 				this.updateDom();
 				return;
 			}
+			this.contactLoadError = false;
 			this.numberOfContacts += payload;
 			this.updateDom();
 		}

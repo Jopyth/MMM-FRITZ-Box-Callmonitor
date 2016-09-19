@@ -22,6 +22,7 @@ module.exports = NodeHelper.create({
 		this.started = false;
 		//create adressbook dictionary
 		this.AddressBook = {};
+		this.retry = true;
 		console.log("Starting module: " + this.name);
 	},
 
@@ -193,6 +194,12 @@ module.exports = NodeHelper.create({
 			if (error) {
 				self.sendSocketNotification("contacts_loaded", -1);
 				console.error(self.name + " error while accessing FRITZ!Box: " + stderr);
+				// try one more time after 30 seconds
+				if (self.retry)
+				{
+					setTimeout(self.loadDataFromAPI, 30 * 1000);					
+				}
+				self.retry = false;
 				throw error;
 			}
 			var phonebooks = stdout.split("\n");
