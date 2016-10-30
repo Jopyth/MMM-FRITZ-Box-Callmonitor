@@ -6,8 +6,8 @@ This an extension for the [MagicMirror](https://github.com/MichMich/MagicMirror)
 ## Installation
 1. Navigate into your MagicMirror's `modules` folder and execute `git clone https://github.com/paviro/MMM-FRITZ-Box-Callmonitor.git`. A new folder will appear navigate into it.
 2. Execute `npm install` to install the dependencies.
-3. (Optional) Execute `sudo apt-get install python-dev libxml2-dev libxslt1-dev zlib1g-dev && sudo pip install fritzconnection` to allow access to your FRITZ!Box phone book and recent calls. This can take a few minutes.
-4. Activate the callmonitor of your FRITZ!Box by calling `#96*5*` on a connected phone.
+3. Activate the callmonitor of your FRITZ!Box by calling `#96*5*` on a connected phone.
+4. (Optional) Execute `sudo apt-get install python-dev libxml2-dev libxslt1-dev zlib1g-dev && sudo pip install fritzconnection` to allow access to your FRITZ!Box phone book and recent calls. This can take a few minutes.
 
 ## Using the module
 
@@ -81,8 +81,8 @@ The following properties can be configured:
 			<td>API</td>
 			<td>Password to access the FritzBox API. (<b>optional</b>) <br> 
 			If you enter this, it directly loads your phonebook(s) and recently missed calls from the FritzBox.<br>
-			If you have specified a username for your access to the FritzBox, see below. <br>
-			You can also create a different user from the one you use for accessing the FritzBox (see this <a href="https://en.avm.de/service/fritzbox/fritzbox-7390/knowledge-base/publication/show/1522_Setting-up-user-accounts-in-the-FRITZ-Box/">guide</a>). It will need rights to access "FRITZ!Box Settings". <br>
+			If you have specified a username for your access to the FritzBox, see below. <br> <br>
+			You can also create a different user from the one you use for accessing the FritzBox (see this guide: <a href="https://service.avm.de/help/en/FRITZ-Box-Fon-WLAN-7490/015/hilfe_system_user_konzept">en</a> / <a href="https://service.avm.de/help/de/FRITZ-Box-Fon-WLAN-7490/015/hilfe_system_user_konzept">de</a>). <b>You will need to check <span title="FRITZ!Box Einstellungen sehen und bearbeiten"><i>View and edit FRITZ!Box settings</i></span> for this user.</b> <br>
 				<br><b>Possible values:</b> <code>string</code>
 				<br><b>Default value:</b> <code>""</code>
 			</td>
